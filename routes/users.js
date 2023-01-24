@@ -1,10 +1,30 @@
 var express = require('express');
 var router = express.Router();
-
-router.get('/', function(req, res, next) { res.send('USER'); });
 const MongoClient = require('mongodb').MongoClient;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
+function auth(req, res, next) 
+{
+    const token = req.header('x-auth-token');
+    if (!token) 
+    {
+        return res.status(401).json({ message: 'Aucun token, autorisation refusée' });
+    }
+
+    try 
+    {
+        const decoded = jwt.verify(token, "Tsanta");
+        req.user = decoded;
+        next();
+    } 
+    catch (err) 
+    {
+        res.status(400).json({ message: 'Token non valide' });
+    }
+}
+
+module.exports = auth;
 
 router.post('/login', async (req, res) => {
 
@@ -27,7 +47,7 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ message: "Utilisateur non trouvé" });
     }
 
-    if (user.collection === "client" && user.etat !== "Validate") 
+    if (user.etat !== "Validate") 
     {
         return res.status(401).json({ message: "Client non validé" });
     }
@@ -117,12 +137,14 @@ router.post('/register', async (req, res) => {
     await db.collection("client").insertOne(newClient);
 
 
-    const token = jwt.sign({ id: newClient._id }, "tsanta", { expiresIn: 86400 });
+    const token = jwt.sign({ id: newClient._id }, "Tsanta", { expiresIn: 86400 });
 
     res.status(201).json({ client: newClient, token: token });
 
     client.close();
 });
+
+router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
 module.exports = router;
 
