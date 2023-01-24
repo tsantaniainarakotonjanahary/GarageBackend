@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
 const MongoClient = require('mongodb').MongoClient;
-const bcrypt = require('bcrypt');
+//const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+/*
 function auth(req, res, next) 
 {
     const token = req.header('x-auth-token');
@@ -24,8 +24,8 @@ function auth(req, res, next)
     }
 }
 
-module.exports = auth;
-
+module.exports = auth;*/
+/*
 router.post('/login', async (req, res) => {
 
     const email = req.body.email;
@@ -143,8 +143,9 @@ router.post('/register', async (req, res) => {
 
     client.close();
 });
+*/
+router.get('/' , function(req, res, next) { res.send('USER'); });
 
-router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
 module.exports = router;
 
