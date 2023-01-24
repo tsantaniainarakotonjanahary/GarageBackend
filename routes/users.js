@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
+
 const MongoClient = require('mongodb').MongoClient;
-//const bcrypt = require('bcrypt');
+const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
-/*
+
 function auth(req, res, next) 
 {
     const token = req.header('x-auth-token');
@@ -24,8 +25,8 @@ function auth(req, res, next)
     }
 }
 
-module.exports = auth;*/
-/*
+module.exports = auth;
+
 router.post('/login', async (req, res) => {
 
     const email = req.body.email;
@@ -52,7 +53,7 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ message: "Client non validé" });
     }
 
-    const passwordIsValid = await bcrypt.compare(password, user.password);
+    const passwordIsValid = await argon2.verify(user.password, password);
 
     if (!passwordIsValid) 
     {
@@ -122,8 +123,7 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: "Cette adresse e-mail est déjà utilisée" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
+    const hash = await argon2.hash(password);
 
     const newClient = {
         nom: nom,
@@ -143,10 +143,8 @@ router.post('/register', async (req, res) => {
 
     client.close();
 });
-*/
 
-router.get('/' , function(req, res, next) { res.send('USER'); });
-
+router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
 module.exports = router;
 
