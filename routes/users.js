@@ -144,6 +144,7 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 */
+
 router.get('/' , function(req, res, next) { res.send('USER'); });
 
 
