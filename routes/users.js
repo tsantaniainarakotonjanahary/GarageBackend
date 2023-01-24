@@ -1,10 +1,22 @@
 var express = require('express');
 var router = express.Router();
-
-
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require("mongodb").ObjectId;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
+const multer = require("multer");
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+    }
+});
+
+const upload = multer({ storage: storage });
+
 
 function auth(req, res, next) 
 {
@@ -17,6 +29,7 @@ function auth(req, res, next)
     try 
     {
         const decoded = jwt.verify(token, "Tsanta");
+        console.log(decoded);
         req.user = decoded;
         next();
     } 
@@ -144,6 +157,42 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ client: newClient, token: token });
 
     client.close();
+});
+
+
+router.patch('/update', auth, upload.single('profileImg'), async (req, res) => {
+
+  const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority',{ useUnifiedTopology: true });
+  await client.connect();
+  const db = client.db("Garage");
+  console.log({ _id: req.user.id });
+  let user = await db.collection("client").findOne({_id: new ObjectId(req.user.id)});
+  
+  if (!user) 
+  {
+    user = await db.collection("employe").findOne({_id: new ObjectId(req.user.id)});
+  }
+
+  if (!user) 
+  {
+    return res.status(401).json({ message: "Utilisateur non trouvé" });
+  }
+
+  user.nom = req.body.nom || user.nom;
+  user.prenom = req.body.prenom || user.prenom;
+  user.email = req.body.email || user.email;
+  
+  if(req.body.password){
+    user.password = await bcrypt.hash(req.body.password, 10);
+  }
+  if(req.file){
+    user.profil = req.file.path;
+  }
+
+  await db.collection("client").updateOne({_id: new ObjectId(req.user.id)}, { $set: user });
+  client.close();
+
+  res.status(200).json({ message: "Profile updated successfully" });
 });
 
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
