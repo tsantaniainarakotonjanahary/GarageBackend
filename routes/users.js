@@ -174,7 +174,7 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 
-router.post('/upload', (req, res) => {
+router.post('/upload', upload.single('file'), (req, res) => {
     res.send("file uploaded");
 });
   
