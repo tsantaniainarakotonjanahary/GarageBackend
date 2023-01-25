@@ -181,7 +181,7 @@ router.post('/upload', (req, res) => {
   
     let file = req.files.files;
   
-    file.mv(`${__dirname}/uploads/${file.name}`, function(err) {
+    file.mv(`./uploads/${file.name}`, function(err) {
       if (err) return res.status(500).send(err);
   
       res.send('File uploaded!');
