@@ -174,9 +174,19 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 
-router.post('/upload', upload.single('file'), (req, res) => {
-    res.send("file uploaded");
-});
+router.post('/upload', (req, res) => {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).send('No files were uploaded.');
+    }
+  
+    let file = req.files.files;
+  
+    file.mv(`${__dirname}/uploads/${file.name}`, function(err) {
+      if (err) return res.status(500).send(err);
+  
+      res.send('File uploaded!');
+    });
+  });
   
 router.get('/download/:fileName', (req, res) => {
     const fileName = req.params.fileName;

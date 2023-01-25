@@ -6,6 +6,14 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var app = express();
 
+const fileUpload = require('express-fileupload');
+
+// Use the middleware
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: '/tmp/'
+}));
+
 
 app.use(logger('dev'));
 app.use(express.json());
