@@ -175,7 +175,7 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/upload', upload.single('file'), (req, res) => {
-    // traitement du fichier uploadé
+    
 });
   
 router.get('/download/:fileName', (req, res) => {
