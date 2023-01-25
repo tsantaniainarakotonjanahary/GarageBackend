@@ -175,7 +175,7 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/upload', (req, res) => {
-    res.send("Profile updated successfully");
+    res.send("file uploaded");
 });
   
 router.get('/download/:fileName', (req, res) => {
