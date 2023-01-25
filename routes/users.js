@@ -6,8 +6,30 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require("fs");
 
-const { Storage } = require('@google-cloud/storage');
-const storage = new Storage();
+const firebase = require("firebase-admin");
+const serviceAccount = require("../credentials.json");
+
+firebase.initializeApp({
+  credential: firebase.credential.cert(serviceAccount),
+  storageBucket: "healthycar-5c25f.appspot.com"
+});
+
+const bucket = firebase.storage().bucket();
+
+const multer = require('multer');
+const path = require('path'); // Ajout de la librairie path pour récupérer l'extension
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
 
 
 
@@ -152,52 +174,68 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 
+router.post('/upload', upload.single('file'), (req, res) => {
+    // traitement du fichier uploadé
+});
+  
+router.get('/download/:fileName', (req, res) => {
+    const fileName = req.params.fileName;
+    console.log(fileName);
+    res.download(`uploads/${fileName}`);
+});
+  
+
+
 router.patch('/update', auth, async (req, res) => {
-    
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority',{ useUnifiedTopology: true });
     await client.connect();
     const db = client.db("Garage");
-  
     let user = await db.collection("client").findOne({_id: new ObjectId(req.user.id)});
-    if (!user) 
+    let collectionName = 'client';
+    if (!user)
     {
-      user = await db.collection("employe").findOne({_id: new ObjectId(req.user.id)});
+    user = await db.collection("employe").findOne({_id: new ObjectId(req.user.id)});
+    collectionName = 'employe';
     }
-  
     if (!user) 
-    {
-      return res.status(401).json({ message: "Utilisateur non trouvé" });
-    }
-  
-    user.nom = req.body.nom || user.nom;
-    user.prenom = req.body.prenom || user.prenom;
-    user.email = req.body.email || user.email;
-    
-    if(req.body.password){
-      user.password = await bcrypt.hash(req.body.password, 10);
-    }
-  
-    if(req.file){
-      const file = req.file;
-      const bucketName = 'healthycar-5c25f';
-      const fileName = file.fieldname + '-' + Date.now() + '.' + file.originalname.split('.')[file.originalname.split('.').length -1];
-  
-      const options = {
-        destination: fileName,
-        metadata: {
-          contentType: file.mimetype
+{
+  return res.status(401).json({ message: "Utilisateur non trouvé" });
+}
+user.nom = req.body.nom || user.nom;
+user.prenom = req.body.prenom || user.prenom;
+user.email = req.body.email || user.email;
+if(req.body.password){
+  user.password = await bcrypt.hash(req.body.password, 10);
+}
+if(req.body.profileImg){
+    const file = req.body.profileImg;
+    const fileName = req.user.id + '-' + Date.now() + '.' + file.split(';')[0].split('/')[1];
+    const filePath = './uploads/' + fileName;
+    fs.writeFile(filePath, file, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error uploading file" });
+      }
+      user.profil = fileName;
+      db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set: user },(err, result) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: "Error updating profile" });
         }
-      };
-      const [file] = await storage.bucket(bucketName).upload(file.path, options);
-      const fileUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
-  
-      user.profil = fileUrl;
+        client.close();
+        res.status(200).json({ message: "Profile updated successfully" });
+      });
+    });
+} else {
+  db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set: user },(err, result) => {
+    if (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Error updating profile" });
     }
-  
-    await db.collection("client").updateOne({_id: new ObjectId(req.user.id)}, { $set: user });
     client.close();
     res.status(200).json({ message: "Profile updated successfully" });
   });
+}
+});
 
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
