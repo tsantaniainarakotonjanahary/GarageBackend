@@ -175,8 +175,7 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/upload', (req, res) => {
-    res.status(200).json({ message: "Profile updated successfully" });
-    
+    res.send("Profile updated successfully");
 });
   
 router.get('/download/:fileName', (req, res) => {
