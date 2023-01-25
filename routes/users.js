@@ -178,7 +178,18 @@ router.post('/upload', (req, res) => {
     if (!req.files || Object.keys(req.files).length === 0) {
       return res.status(400).send('No files were uploaded.');
     }
-  
+    
+    const fs = require('fs')
+
+const dir = './uploads'
+
+fs.mkdir(dir, err => {
+  if (err.code!=="EEXIST") {
+    console.log('Directory is created.')
+  }
+
+})
+
     let file = req.files.files;
   
     file.mv(`./uploads/${file.name}`, function(err) {
