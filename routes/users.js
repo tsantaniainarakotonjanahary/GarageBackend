@@ -174,8 +174,8 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 
-router.post('/upload', upload.single('file'), (req, res) => {
-    res.json({message: req.file })
+router.post('/upload', (req, res) => {
+    res.status(200).json({ message: "Profile updated successfully" });
     
 });
   
