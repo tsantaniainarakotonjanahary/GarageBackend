@@ -4,6 +4,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var voitureRouter = require('./routes/voiture');
 var app = express();
 
 const fileUpload = require('express-fileupload');
@@ -21,7 +22,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/voiture', usersRouter);
+app.use('/voiture', voitureRouter);
 
 app.use(function(req, res, next) { next(createError(404)); });
 
