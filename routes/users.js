@@ -78,7 +78,9 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ message: "Utilisateur non trouvé" });
     }
 
-    if (user.etat !== "validate") 
+    console.log(user);
+
+    if (user.etat !== "Validate") 
     {
         return res.status(401).json({ message: "Client non validé" });
     }
