@@ -107,6 +107,7 @@ router.post('/register', async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
     const passwordConf = req.body.passwordConf;
+    const profil = req.body.profil;
 
 
     if (password !== passwordConf) {
@@ -157,7 +158,7 @@ router.post('/register', async (req, res) => {
         prenom: prenom,
         email: email,
         password: hash,
-        profil: "default.png",
+        profil: profil,
         etat: "non validate"
     };
 
