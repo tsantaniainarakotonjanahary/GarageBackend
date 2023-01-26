@@ -21,6 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/voiture', usersRouter);
 
 app.use(function(req, res, next) { next(createError(404)); });
 

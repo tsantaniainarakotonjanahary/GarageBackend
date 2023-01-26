@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-
+router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
 
 function auth(req, res, next) 
@@ -196,37 +196,6 @@ router.post('/register', async (req, res) => {
     client.close();
 });
 
-router.post('/upload', (req, res) => {
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).send('No files were uploaded.');
-    }
-    
-    const fs = require('fs')
-
-const dir = './uploads'
-
-fs.mkdir(dir, err => {
-  if (err.code!=="EEXIST") {
-    console.log('Directory is created.')
-  }
-
-})
-
-    let file = req.files.files;
-  
-    file.mv(`./uploads/${file.name}`, function(err) {
-      if (err) return res.status(500).send(err);
-  
-      res.send('File uploaded!');
-    });
-  });
-  
-router.get('/download/:fileName', (req, res) => {
-    const fileName = req.params.fileName;
-    console.log(fileName);
-    res.download(`uploads/${fileName}`);
-});
-  
 
 
 router.put('/update', auth, async (req, res) => {
@@ -259,7 +228,7 @@ db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set
   });
 });
 
-router.get('/', auth , function(req, res, next) { res.send('USER'); });
+
 
 router.get('/verify', async (req, res) => {
     const token = req.query.token;
