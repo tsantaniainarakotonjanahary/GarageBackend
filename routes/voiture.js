@@ -8,6 +8,8 @@ const fs = require("fs");
 const nodemailer = require('nodemailer');
 var auth = require("../routes/users");
 
+router.get('/voiture', auth , function(req, res, next) { res.send('USER'); });
+
 router.post('/depot', auth, async (req, res) => {
     const numero = req.body.numero;
     const marque = req.body.marque;
