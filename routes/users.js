@@ -163,9 +163,10 @@ router.post('/register', async (req, res) => {
 
     await db.collection("client").insertOne(newClient);
 
-
     const token = jwt.sign({ id: newClient._id }, "Tsanta", { expiresIn: 86400 });
 
+    const verificationLink = `https://garage-backend-sigma.vercel.app/users/verify?token=${token}`;
+    
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -173,18 +174,15 @@ router.post('/register', async (req, res) => {
             pass: "hswviujoemmcbvcg"
         }
     });
-
+    
     const mailOptions = {
         from: "healthycar00reply@gmail.com",
         to: email,
         subject: 'Validation de compte',
-        text: 'Cliquez sur ce lien pour valider votre compte: https://garage-backend-sigma.vercel.app/users/verify',
-        html: '<p>Cliquez sur ce lien pour valider votre compte: <a href="https://garage-backend-sigma.vercel.app/users/verify">https://garage-backend-sigma.vercel.app/users/verify</a></p>',
-        headers: {
-            'x-auth-token': token
-        }
+        text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
+        html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
     };
-
+    
     transporter.sendMail(mailOptions, (error, info) => {
         if(error){
             console.log(error);
@@ -192,7 +190,6 @@ router.post('/register', async (req, res) => {
             console.log('Email sent: ' + info.response);
         }
     });
-
 
     res.status(201).json({ client: newClient, message: "vous allez recevoir un email de verification pour confirmer votre inscription" });
 
