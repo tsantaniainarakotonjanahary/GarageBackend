@@ -161,8 +161,6 @@ router.post('/register', async (req, res) => {
         etat: "non validate"
     };
 
-    await db.collection("client").insertOne(newClient);
-    
     const { insertedId } = await db.collection("client").insertOne(newClient);
 
     const token = jwt.sign({ id: insertedId }, "Tsanta", { expiresIn: 86400 });
@@ -231,7 +229,7 @@ router.get('/download/:fileName', (req, res) => {
   
 
 
-router.patch('/update', auth, async (req, res) => {
+router.put('/update', auth, async (req, res) => {
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority',{ useUnifiedTopology: true });
     await client.connect();
     const db = client.db("Garage");
@@ -249,29 +247,9 @@ router.patch('/update', auth, async (req, res) => {
 user.nom = req.body.nom || user.nom;
 user.prenom = req.body.prenom || user.prenom;
 user.email = req.body.email || user.email;
-if(req.body.password){
-  user.password = await bcrypt.hash(req.body.password, 10);
-}
-if(req.body.profileImg){
-    const file = req.body.profileImg;
-    const fileName = req.user.id + '-' + Date.now() + '.' + file.split(';')[0].split('/')[1];
-    const filePath = './uploads/' + fileName;
-    fs.writeFile(filePath, file, (err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error uploading file" });
-      }
-      user.profil = fileName;
-      db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set: user },(err, result) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).json({ message: "Error updating profile" });
-        }
-        client.close();
-        res.status(200).json({ message: "Profile updated successfully" });
-      });
-    });
-} else {
-  db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set: user },(err, result) => {
+user.profil = req.body.profil || user.profil;
+if(req.body.password){ user.password = await bcrypt.hash(req.body.password, 10); }
+db.collection(collectionName).updateOne({_id: new ObjectId(req.user.id)}, { $set: user },(err, result) => {
     if (err) {
         console.log(err);
         return res.status(500).json({ message: "Error updating profile" });
@@ -279,7 +257,6 @@ if(req.body.profileImg){
     client.close();
     res.status(200).json({ message: "Profile updated successfully" });
   });
-}
 });
 
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
@@ -302,7 +279,7 @@ router.get('/verify', async (req, res) => {
             return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
         await db.collection("client").updateOne({ _id: new ObjectId(decoded.id) }, { $set: { etat: "validate" } });
-        res.redirect(`https://your-app.com/home?token=${token}`);
+        res.redirect(`https://m1p10mean-tahiana-tsantaniaina.vercel.app/client?token=${token}`);
     } catch (err) {
         res.status(400).json({ message: 'Token non valide' });
     }
