@@ -5,6 +5,7 @@ const ObjectId = require("mongodb").ObjectId;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require("fs");
+const nodemailer = require('nodemailer');
 
 const firebase = require("firebase-admin");
 const serviceAccount = require("../credentials.json");
@@ -104,13 +105,9 @@ router.post('/register', async (req, res) => {
     const nom = req.body.nom;
     const prenom = req.body.prenom;
     const email = req.body.email;
-    const emailConf = req.body.emailConf;
     const password = req.body.password;
     const passwordConf = req.body.passwordConf;
 
-    if (email !== emailConf) {
-        return res.status(400).json({ message: "Les adresses e-mail ne correspondent pas" });
-    }
 
     if (password !== passwordConf) {
         return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
@@ -169,7 +166,35 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign({ id: newClient._id }, "Tsanta", { expiresIn: 86400 });
 
-    res.status(201).json({ client: newClient, token: token });
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: "healthycar00reply@gmail.com",
+            pass: "hswviujoemmcbvcg"
+        }
+    });
+
+    const mailOptions = {
+        from: "healthycar00reply@gmail.com",
+        to: email,
+        subject: 'Validation de compte',
+        text: 'Cliquez sur ce lien pour valider votre compte: https://garage-backend-sigma.vercel.app/users/verify',
+        html: '<p>Cliquez sur ce lien pour valider votre compte: <a href="https://garage-backend-sigma.vercel.app/users/verify">https://garage-backend-sigma.vercel.app/users/verify</a></p>',
+        headers: {
+            'x-auth-token': token
+        }
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if(error){
+            console.log(error);
+        }else{
+            console.log('Email sent: ' + info.response);
+        }
+    });
+
+
+    res.status(201).json({ client: newClient, message: "vous allez recevoir un email de verification pour confirmer votre inscription" });
 
     client.close();
 });
@@ -259,6 +284,27 @@ if(req.body.profileImg){
 });
 
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
+
+router.get('/verify', (req, res) => {
+
+    const token = req.header('x-auth-token');
+    if (!token) 
+    {
+        return res.status(401).json({ message: 'Aucun token, autorisation refusée' });
+    }
+
+    try 
+    {
+        const decoded = jwt.verify(token, 'Tsanta');
+        res.set('x-auth-token', token);
+        res.redirect('https://your-app.com/home');
+    } 
+    catch (err) 
+    {
+        res.status(400).json({ message: 'Token non valide' });
+    }
+});
+
 
 module.exports = router;
 
