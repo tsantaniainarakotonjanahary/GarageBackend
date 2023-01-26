@@ -172,30 +172,32 @@ router.post('/register', async (req, res) => {
 
     const verificationLink = `https://garage-backend-sigma.vercel.app/users/verify?token=${token}`;
     
-const transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 465,
-    secure: true,
-    auth: {
-      user: 'apikey',
-      pass: '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'
-    }
-  });
-  
-  const msg = {
-      from: "mygarage00reply@gmail.com",
-      to: email,
-      subject: 'Validation de compte',
-      text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
-      html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
-  };
-  
-  transporter.sendMail(msg, (error, info) => {
-    if (error) {
-      return console.log(error);
-    }
-    console.log('Message sent: %s', info.messageId);
-  });
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: "healthycar00reply@gmail.com",
+            pass: "hswviujoemmcbvcg"
+        }
+    });
+    
+    const mailOptions = {
+        from: "healthycar00reply@gmail.com",
+        to: email,
+        subject: 'Validation de compte',
+        text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
+        html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
+    };
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+        if(error){
+            console.log(error);
+        }else{
+            console.log('Email sent: ' + info.response);
+        }
+    });
+
+    res.status(201).json({ client: newClient, message: "vous allez recevoir un email de verification pour confirmer votre inscription" });
 
     
     client.close();
