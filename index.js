@@ -5,9 +5,12 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var voitureRouter = require('./routes/voiture');
+const cors = require('cors');
 var app = express();
 
 const fileUpload = require('express-fileupload');
+
+app.use(cors());
 
 // Use the middleware
 app.use(fileUpload({
