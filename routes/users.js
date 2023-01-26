@@ -171,25 +171,31 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({ id: insertedId }, "Tsanta", { expiresIn: 86400 });
 
     const verificationLink = `https://garage-backend-sigma.vercel.app/users/verify?token=${token}`;
-    require('dotenv').config();
-    const sgMail = require('@sendgrid/mail')
-    console.log(process.env.SENDGRID_API_KEY);
-    sgMail.setApiKey('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');
-    const msg = {
-      to: email, // Change to your recipient
-      from: 'mygarage00reply@gmail.com', // Change to your verified sender
-      subject: 'Sending with SendGrid is Fun',
-      text: 'and easy to do anywhere, even with Node.js',
-      html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+    
+const transporter = nodemailer.createTransport({
+    host: 'smtp.sendgrid.net',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'apikey',
+      pass: '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'
     }
-    sgMail
-      .send(msg)
-      .then(() => {
-        console.log('Email sent')
-      })
-      .catch((error) => {
-        console.error(error)
-      })
+  });
+  
+  const msg = {
+      from: "mygarage00reply@gmail.com",
+      to: email,
+      subject: 'Validation de compte',
+      text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
+      html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
+  };
+  
+  transporter.sendMail(msg, (error, info) => {
+    if (error) {
+      return console.log(error);
+    }
+    console.log('Message sent: %s', info.messageId);
+  });
 
     
     client.close();
