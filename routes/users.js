@@ -283,8 +283,8 @@ if(req.body.profileImg){
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
 router.get('/verify', (req, res) => {
+    const token = req.query.token; // recupérer le token depuis l'url
 
-    const token = req.header('x-auth-token');
     if (!token) 
     {
         return res.status(401).json({ message: 'Aucun token, autorisation refusée' });
