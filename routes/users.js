@@ -282,22 +282,30 @@ if(req.body.profileImg){
 
 router.get('/', auth , function(req, res, next) { res.send('USER'); });
 
-router.get('/verify', (req, res) => {
-    const token = req.query.token; // recupérer le token depuis l'url
+router.get('/verify', async (req, res) => {
+    const token = req.query.token;
 
-    if (!token) 
-    {
+    if (!token) {
         return res.status(401).json({ message: 'Aucun token, autorisation refusée' });
     }
 
-    try 
-    {
+    try {
+        //Connexion à MongoDB
+        const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority',{ useUnifiedTopology: true });
+        await client.connect();
+        const db = client.db("Garage");
+
         const decoded = jwt.verify(token, 'Tsanta');
-        res.set('x-auth-token', token);
-        res.redirect('https://your-app.com/home');
-    } 
-    catch (err) 
-    {
+        //Recherche de l'utilisateur par ID
+        const user = await db.collection("client").findOne({ _id: new ObjectId(decoded.id) });
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        }
+        //Mise à jour de l'état de l'utilisateur
+        await db.collection("client").updateOne({ _id: new ObjectId(decoded.id) }, { $set: { etat: "validate" } });
+        //Redirection avec le token dans l'URL
+        res.redirect(`https://your-app.com/home?token=${token}`);
+    } catch (err) {
         res.status(400).json({ message: 'Token non valide' });
     }
 });
