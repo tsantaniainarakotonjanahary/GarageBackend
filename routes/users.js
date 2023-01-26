@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken');
 const fs = require("fs");
 const nodemailer = require('nodemailer');
 
+const sendgridTransport = require('nodemailer-sendgrid-transport');
+
 const firebase = require("firebase-admin");
 const serviceAccount = require("../credentials.json");
 
@@ -170,31 +172,22 @@ router.post('/register', async (req, res) => {
 
     const verificationLink = `https://garage-backend-sigma.vercel.app/users/verify?token=${token}`;
     
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: "healthycar00reply@gmail.com",
-            pass: "hswviujoemmcbvcg"
-        }
-    });
-    
-    const mailOptions = {
-        from: "healthycar00reply@gmail.com",
-        to: email,
-        subject: 'Validation de compte',
-        text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
-        html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
-    };
-    
-    transporter.sendMail(mailOptions, (error, info) => {
-        if(error){
-            return res.status(400).json({ message: error });
-        }else{
-            console.log();
-            res.status(201).json({ client: newClient, message: 'Email sent: ' + info.response });
 
+        const sgMail = require('@sendgrid/mail')
+        sgMail.setApiKey("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")
+        const msg = {
+            from: "healthycar00reply@gmail.com",
+            to: email,
+            subject: 'Validation de compte',
+            text: `Cliquez sur ce lien pour valider votre compte: ${verificationLink}`,
+            html: `<p>Cliquez sur ce lien pour valider votre compte: <a href="${verificationLink}">${verificationLink}</a></p>`,
         }
-    });
+
+        sgMail.send(msg).then(() => {
+            res.status(201).json({ client: newClient, message: 'Email sent' });
+        }).catch((error) => {
+            return res.status(400).json({ message: error });
+        })
 
     
     client.close();
