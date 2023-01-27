@@ -253,7 +253,7 @@ router.get('/verify', async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
-        await db.collection("client").updateOne({ _id: new ObjectId(decoded.id) }, { $set: { etat: "validate" } });
+        await db.collection("client").updateOne({ _id: new ObjectId(decoded.id) }, { $set: { etat: "Validate" } });
         res.redirect(`https://m1p10mean-tahiana-tsantaniaina.vercel.app/client?token=${token}`);
     } catch (err) {
         res.status(400).json({ message: 'Token non valide' });
