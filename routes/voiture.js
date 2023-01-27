@@ -85,6 +85,12 @@ router.put('/reception', auth , async (req, res) => {
         return res.status(404).json({ message: "Cette voiture n'existe pas" });
     }
 
+    const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
+    
+    if(lastEvent.evenement[0].type !== "depot") {
+        return res.status(400).json({ message: "Dernier événement doit être un dépôt" });
+    }
+
    await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
 
     res.status(200).json({ message: "Voiture receptionée avec succès" });
