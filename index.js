@@ -7,6 +7,7 @@ var usersRouter = require('./routes/users');
 var voitureRouter = require('./routes/voiture');
 const cors = require('cors');
 var app = express();
+require('dotenv').config();
 
 const fileUpload = require('express-fileupload');
 

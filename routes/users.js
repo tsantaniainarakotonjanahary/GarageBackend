@@ -198,11 +198,8 @@ router.post('/register', async (req, res) => {
     });
 
 
-    
     client.close();
 });
-
-
 
 router.put('/update', auth, async (req, res) => {
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority',{ useUnifiedTopology: true });
