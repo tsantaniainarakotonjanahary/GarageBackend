@@ -197,7 +197,6 @@ router.post('/register', async (req, res) => {
         }
     });
 
-    res.status(201).json({ client: newClient, message: "vous allez recevoir un email de verification pour confirmer votre inscription" });
 
     
     client.close();
