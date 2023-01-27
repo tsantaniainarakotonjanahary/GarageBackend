@@ -67,12 +67,13 @@ router.post('/depot', auth, async (req, res) => {
 
 
 router.put('/reception', auth , async (req, res) => {
-
     const numero = req.body.numero;
     const dateReception = new Date();
+    console.log(req.body.reparation);
     const evenement = {
         type: "reception",
-        date: dateReception
+        date: dateReception,
+        reparation: req.body.reparation
     };
 
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
@@ -84,7 +85,7 @@ router.put('/reception', auth , async (req, res) => {
         return res.status(404).json({ message: "Cette voiture n'existe pas" });
     }
 
-    await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
+   await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
 
     res.status(200).json({ message: "Voiture receptionée avec succès" });
 
