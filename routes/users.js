@@ -191,9 +191,9 @@ router.post('/register', async (req, res) => {
     
     transporter.sendMail(mailOptions, (error, info) => {
         if(error){
-            console.log(error);
+            return res.status(400).json({ message: error });
         }else{
-            console.log('Email sent: ' + info.response);
+            res.status(201).json({ client: newClient, message: "vous allez recevoir un email de verification pour confirmer votre inscription" + info.response });
         }
     });
 
