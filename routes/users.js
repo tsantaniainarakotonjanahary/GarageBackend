@@ -57,7 +57,6 @@ function auth(req, res, next)
     }
 }
 
-module.exports = auth;
 
 router.post('/login', async (req, res) => {
 

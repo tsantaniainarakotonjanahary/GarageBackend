@@ -6,9 +6,31 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require("fs");
 const nodemailer = require('nodemailer');
-var auth = require("../routes/users");
 
-router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
+
+
+function auth(req, res, next) 
+{
+    const token = req.header('x-auth-token');
+    if (!token) 
+    {
+        return res.status(401).json({ message: 'Aucun token, autorisation refusée' });
+    }
+
+    try 
+    {
+        const decoded = jwt.verify(token, "Tsanta");
+        console.log(decoded);
+        req.user = decoded;
+        next();
+    } 
+    catch (err) 
+    {
+        res.status(400).json({ message: 'Token non valide' });
+    }
+}
+
+
 
 router.post('/depot', auth, async (req, res) => {
 
@@ -104,5 +126,7 @@ router.get('/non-receptionees', auth, async (req, res) => {
     client.close();
     res.send(result);
 });
+
+router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
 
 module.exports = router;
