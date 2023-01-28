@@ -87,11 +87,6 @@ router.put('/reception', auth , async (req, res) => {
         return res.status(404).json({ message: "Cette voiture n'existe pas" });
     }
 
-    const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
-
-    if(lastEvent.evenement[0].type !== "depot") {
-        return res.status(400).json({ message: "Dernier événement doit être un dépôt" });
-    }
 
    await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
 
@@ -295,6 +290,34 @@ router.put('/payer-reparation', auth , async (req, res) => {
       });
 
     res.status(200).json({ message: "La reparation commencé" });
+
+    client.close();
+});
+
+
+router.put('/validation-sortie', auth , async (req, res) => {
+    const numero = req.body.numero;
+    const dateValidation = new Date();
+    const evenement = {
+        type: "validation sortie",
+        date: dateValidation,
+        reparation: req.body.reparation
+    };
+
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const db = client.db("Garage");
+
+    const carExists = await db.collection("voiture").findOne({ numero: numero });
+    if (!carExists) {
+        return res.status(404).json({ message: "Cette voiture n'existe pas" });
+    }
+    
+    const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
+
+    await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
+
+    res.status(200).json({ message: "Bon de sortie validé" });
 
     client.close();
 });
