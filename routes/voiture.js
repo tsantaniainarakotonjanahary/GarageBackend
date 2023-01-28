@@ -136,6 +136,7 @@ router.get('/non-receptionees', auth, async (req, res) => {
 
 
 router.get('/non-sortie', auth, async (req, res) => {
+
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
     await client.connect();
     const collection = client.db("Garage").collection("voiture");
@@ -158,7 +159,8 @@ router.get('/non-sortie', auth, async (req, res) => {
                 "voiture_join.marque": 1,
                 "voiture_join.numero": 1,
                 "mostRecentEvent.type": 1,
-                "mostRecentEvent.date": 1
+                "mostRecentEvent.date": 1,
+                "mostRecentEvent.reparation": 1
             }
         },
         {
@@ -169,6 +171,47 @@ router.get('/non-sortie', auth, async (req, res) => {
       ]).toArray();
     client.close();
     res.send(result);
+});
+
+
+router.put('/commencer-reparation', auth , async (req, res) => {
+
+    const numero = req.body.numero;
+    const description = req.body.description;
+
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const db = client.db("Garage");
+
+    const carExists = await db.collection("voiture").findOne({ numero: numero });
+    if (!carExists) {
+        return res.status(404).json({ message: "Cette voiture n'existe pas" });
+    }
+
+    const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
+
+    if(lastEvent.evenement[0].type !== "depot") {
+        return res.status(400).json({ message: "Dernier événement doit être un depot" });
+    }
+
+    const dateDebut = new Date();
+    const update = await db.collection("voiture").updateOne({
+        numero: numero,
+        "evenement.reparation.description": description
+      }, {
+        $set: {
+          "evenement.$[outer].reparation.$[inner].debut_reparation": new Date()
+        }
+      }, {
+        arrayFilters: [
+          { "outer.reparation.description": description },
+          { "inner.description": description }
+        ]
+      });
+
+    res.status(200).json({ message: "La reparation commencé" });
+
+    client.close();
 });
 
 router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
