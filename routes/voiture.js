@@ -86,7 +86,7 @@ router.put('/reception', auth , async (req, res) => {
     }
 
     const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
-    
+
     if(lastEvent.evenement[0].type !== "depot") {
         return res.status(400).json({ message: "Dernier événement doit être un dépôt" });
     }
@@ -127,6 +127,43 @@ router.get('/non-receptionees', auth, async (req, res) => {
         {
             $match: {
                 "mostRecentEvent.type": "depot"
+            }
+        }
+      ]).toArray();
+    client.close();
+    res.send(result);
+});
+
+
+router.get('/non-sortie', auth, async (req, res) => {
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const collection = client.db("Garage").collection("voiture");
+    const result = await collection.aggregate([
+        {
+            $addFields: {
+                mostRecentEvent: { $arrayElemAt: [ "$evenement", -1 ] }
+            }
+        },
+        {
+            $lookup: {
+                from: "voiture",
+                localField: "mostRecentEvent.date",
+                foreignField: "evenement.date",
+                as: "voiture_join"
+            }
+        },
+        {
+            $project: {
+                "voiture_join.marque": 1,
+                "voiture_join.numero": 1,
+                "mostRecentEvent.type": 1,
+                "mostRecentEvent.date": 1
+            }
+        },
+        {
+            $match: {
+                "mostRecentEvent.type": "reception"
             }
         }
       ]).toArray();
