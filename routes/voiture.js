@@ -36,6 +36,7 @@ router.post('/depot', auth, async (req, res) => {
 
     const numero = req.body.numero;
     const marque = req.body.marque;
+    const idclient = req.body.idclient;
     const dateDepot = new Date();
 
     const evenement = {
@@ -55,6 +56,7 @@ router.post('/depot', auth, async (req, res) => {
     const newCar = {
         marque: marque,
         numero: numero,
+        idclient: idclient,
         evenement: [evenement]
     };
 
