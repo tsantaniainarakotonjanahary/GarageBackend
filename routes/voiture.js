@@ -10,9 +10,6 @@ const moment = require('moment-timezone');
 const { DateTime } = require('luxon');
 const { setTimeZone } = require('date-fns');
 
-
-
-
 function auth(req, res, next) 
 {
     const token = req.header('x-auth-token');
@@ -284,7 +281,9 @@ router.put('/payer-reparation', auth , async (req, res) => {
     }
 
     const currentDate = new Date();
+    console.log(currentDate);
     currentDate.setHours(currentDate.getHours() + 3);   
+    console.log(currentDate);
 
     const update = await db.collection("voiture").updateOne({
         numero: numero,
@@ -332,6 +331,49 @@ router.put('/validation-sortie', auth , async (req, res) => {
     res.status(200).json({ message: "Bon de sortie validé" });
 
     client.close();
+});
+
+
+
+router.get('/voiture-present', auth, async (req, res) => {
+
+    const idclient = req.body.idclient;
+    console.log(idclient);
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const collection = client.db("Garage").collection("voiture");
+    const result = await collection.aggregate([
+        {
+            $match: {
+                "idclient": idclient
+            }
+        },
+        {
+            $unwind: "$evenement"
+        },
+        {
+            $sort: {
+                "_id": 1,
+                "evenement.date": -1
+            }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                marque: { $first: "$marque" },
+                numero: { $first: "$numero" },
+                idclient: { $first: "$idclient" },
+                evenement: { $first: "$evenement" }
+            }
+        },
+        {
+            $match: {
+                "evenement.type": { "$ne": "validation sortie" }
+            }
+        }
+    ]).toArray();
+    client.close();
+    res.send(result);
 });
 
 router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
