@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require("fs");
 const nodemailer = require('nodemailer');
+const moment = require('moment-timezone');
 
 
 
@@ -262,6 +263,7 @@ router.put('/payer-reparation', auth , async (req, res) => {
     await client.connect();
     const db = client.db("Garage");
 
+
     const carExists = await db.collection("voiture").findOne({ numero: numero });
     if (!carExists) {
         return res.status(404).json({ message: "Cette voiture n'existe pas" });
@@ -273,13 +275,15 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const dateDebut = new Date();
+    const date = new Date(Date.now());
+
     const update = await db.collection("voiture").updateOne({
         numero: numero,
         "evenement.reparation.description": description
       }, {
         $set: {
-          "evenement.$[outer].reparation.$[inner].etat": "paye"
+          "evenement.$[outer].reparation.$[inner].etat": "paye",
+          "evenement.$[outer].reparation.$[inner].payement": date
         }
       }, {
         arrayFilters: [
