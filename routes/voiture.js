@@ -8,7 +8,7 @@ const fs = require("fs");
 const nodemailer = require('nodemailer');
 const moment = require('moment-timezone');
 const { DateTime } = require('luxon');
-const { setTimeZone } = require('date-fns-tz');
+const { setTimeZone } = require('date-fns');
 
 
 
@@ -278,8 +278,11 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const date = new Date();
-const dateInMadagascar = setTimeZone(date, 'Indian/Antananarivo');
+    const { DateTime } = require('luxon');
+    const timezone = 'Indian/Antananarivo';
+    const dateInMadagascar = DateTime.local().setZone(timezone);
+    console.log(dateInMadagascar);
+
 
     const update = await db.collection("voiture").updateOne({
         numero: numero,
@@ -308,6 +311,8 @@ router.put('/validation-sortie', auth , async (req, res) => {
     const options = { timeZone: "Indian/Antananarivo" };
     const formattedDate = date.toLocaleString("fr-FR", options);
     const dateValidation = new Date(formattedDate);
+
+    
     const evenement = {
         type: "validation sortie",
         date: dateValidation,
