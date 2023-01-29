@@ -38,7 +38,6 @@ router.post('/depot', auth, async (req, res) => {
     const marque = req.body.marque;
     const idclient = req.body.idclient;
     const dateDepot = new Date();
-
     const evenement = {
         type: "depot",
         date: dateDepot
@@ -297,7 +296,10 @@ router.put('/payer-reparation', auth , async (req, res) => {
 
 router.put('/validation-sortie', auth , async (req, res) => {
     const numero = req.body.numero;
-    const dateValidation = new Date();
+    const date = new Date();
+    const options = { timeZone: "Indian/Antananarivo" };
+    const formattedDate = date.toLocaleString("fr-FR", options);
+    const dateValidation = new Date(formattedDate);
     const evenement = {
         type: "validation sortie",
         date: dateValidation,
