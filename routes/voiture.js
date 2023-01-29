@@ -277,7 +277,7 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const date = DateTime.local().setZone('Indian/Antananarivo').toString();
+    const date = DateTime.local().setZone('Africa/Nairobi').toString();
     const datePayement = new Date(date);
 
     const update = await db.collection("voiture").updateOne({
