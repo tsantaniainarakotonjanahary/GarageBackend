@@ -42,6 +42,7 @@ router.post('/depot', auth, async (req, res) => {
     const marque = req.body.marque;
     const idclient = req.body.idclient;
     const dateDepot = new Date();
+    dateDepot.setHours(dateDepot.getHours() + 3);
     const evenement = {
         type: "depot",
         date: dateDepot
@@ -74,6 +75,7 @@ router.post('/depot', auth, async (req, res) => {
 router.put('/reception', auth , async (req, res) => {
     const numero = req.body.numero;
     const dateReception = new Date();
+    dateReception.setHours(dateReception.getHours() + 3);
     console.log(req.body.reparation);
     const evenement = {
         type: "reception",
@@ -195,6 +197,7 @@ router.put('/commencer-reparation', auth , async (req, res) => {
     }
 
     const dateDebut = new Date();
+    dateDebut.setHours(dateDebut.getHours() + 3);
     const update = await db.collection("voiture").updateOne({
         numero: numero,
         "evenement.reparation.description": description
@@ -236,13 +239,15 @@ router.put('/finir-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const dateDebut = new Date();
+    const dateFin = new Date();
+    dateFin.setHours(dateFin.getHours() + 3);
+    
     const update = await db.collection("voiture").updateOne({
         numero: numero,
         "evenement.reparation.description": description
       }, {
         $set: {
-          "evenement.$[outer].reparation.$[inner].fin_reparation": new Date()
+          "evenement.$[outer].reparation.$[inner].fin_reparation": dateFin
         }
       }, {
         arrayFilters: [
@@ -278,10 +283,8 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const date = new Date();
-const timezoneOffset = date.getTimezoneOffset();
-const madagascarTime = new Date(date.getTime() + (3 * 60 - timezoneOffset) * 60 * 1000);
-
+    const currentDate = new Date();
+    currentDate.setHours(currentDate.getHours() + 3);   
 
     const update = await db.collection("voiture").updateOne({
         numero: numero,
@@ -289,7 +292,7 @@ const madagascarTime = new Date(date.getTime() + (3 * 60 - timezoneOffset) * 60 
       }, {
         $set: {
           "evenement.$[outer].reparation.$[inner].etat": "paye",
-          "evenement.$[outer].reparation.$[inner].payement": madagascarTime
+          "evenement.$[outer].reparation.$[inner].payement":  currentDate 
         }
       }, {
         arrayFilters: [
@@ -306,12 +309,8 @@ const madagascarTime = new Date(date.getTime() + (3 * 60 - timezoneOffset) * 60 
 
 router.put('/validation-sortie', auth , async (req, res) => {
     const numero = req.body.numero;
-    const date = new Date();
-    const options = { timeZone: "Indian/Antananarivo" };
-    const formattedDate = date.toLocaleString("fr-FR", options);
-    const dateValidation = new Date(formattedDate);
-
-    
+    const dateValidation = new Date();
+    dateValidation.setHours(dateValidation.getHours() + 3);  
     const evenement = {
         type: "validation sortie",
         date: dateValidation,
