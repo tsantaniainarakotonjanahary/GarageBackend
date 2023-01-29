@@ -275,7 +275,8 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const date = new Date(Date.now());
+    const date = moment().tz('Indian/Antananarivo').format();
+    const datePayement = new Date(date);
 
     const update = await db.collection("voiture").updateOne({
         numero: numero,
@@ -283,7 +284,7 @@ router.put('/payer-reparation', auth , async (req, res) => {
       }, {
         $set: {
           "evenement.$[outer].reparation.$[inner].etat": "paye",
-          "evenement.$[outer].reparation.$[inner].payement": date
+          "evenement.$[outer].reparation.$[inner].payement": datePayement
         }
       }, {
         arrayFilters: [
