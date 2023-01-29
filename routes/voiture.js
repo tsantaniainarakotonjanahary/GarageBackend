@@ -301,7 +301,7 @@ router.put('/payer-reparation', auth , async (req, res) => {
         ]
       });
 
-    res.status(200).json({ message: "La reparation commencé" });
+    res.status(200).json({ message: "La reparation payé" });
 
     client.close();
 });
@@ -314,7 +314,6 @@ router.put('/validation-sortie', auth , async (req, res) => {
     const evenement = {
         type: "validation sortie",
         date: dateValidation,
-        reparation: req.body.reparation
     };
 
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
