@@ -278,10 +278,9 @@ router.put('/payer-reparation', auth , async (req, res) => {
         return res.status(400).json({ message: "Dernier événement doit être un depot" });
     }
 
-    const { DateTime } = require('luxon');
-    const timezone = 'Indian/Antananarivo';
-    const dateInMadagascar = DateTime.local().setZone(timezone);
-    console.log(dateInMadagascar);
+    const date = new Date();
+const timezoneOffset = date.getTimezoneOffset();
+const madagascarTime = new Date(date.getTime() + (3 * 60 - timezoneOffset) * 60 * 1000);
 
 
     const update = await db.collection("voiture").updateOne({
@@ -290,7 +289,7 @@ router.put('/payer-reparation', auth , async (req, res) => {
       }, {
         $set: {
           "evenement.$[outer].reparation.$[inner].etat": "paye",
-          "evenement.$[outer].reparation.$[inner].payement": dateInMadagascar
+          "evenement.$[outer].reparation.$[inner].payement": madagascarTime
         }
       }, {
         arrayFilters: [
