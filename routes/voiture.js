@@ -542,101 +542,65 @@ router.get('/ca-per-day', auth, async (req, res) => {
         return res.status(400).send({ error: "La liste de dates est manquante ou mal formée dans la requête" });
     }
 
-    // Transformation des chaînes de caractères en objets Date
-    const datesInObject = dates.map(date => new Date(date));
-
-    let result = [];
-    for (const date of datesInObject) {
-        // Calcul du CA pour la date spécifiée
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const pipeline = [
-            {
-                $unwind: "$evenement",
-            },
-            {
-                $match: {
-                    "evenement.type": "reception",
-                    "evenement.reparation.payement": {
-                        $gte: startOfDay,
-                        $lte: endOfDay
-                    }
+    const pipeline = [
+        {
+            $match: {
+                "evenement.type": "reception",
+                "evenement.reparation.payement": {
+                    $gte: start,
+                    $lte: end
                 }
-            },
-            {
-                $unwind: "$evenement.reparation",
-            },
-            {
-                $match: {
-                    "evenement.reparation.etat": "paye",
-                    "evenement.reparation.payement": {
-                        $gte: startOfDay,
-                        $lte: endOfDay
-                    }
+            }
+        },
+        {
+            $unwind: "$evenement",
+        },
+        {
+            $unwind: "$evenement.reparation",
+        },
+        {
+            $match: {
+                "evenement.reparation.etat": "paye",
+                "evenement.reparation.payement": {
+                    $gte: start,
+                    $lte: end
                 }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalCA: {
-                        $sum: {
-                            $add: [
-                                "$evenement.reparation.frais",
-                                {
-                                    $sum: {
-                                        $map: {
-                                            input: "$evenement.reparation.achat_piece",
-                                            in: {
-                                                $multiply: ["$$this.pu", "$$this.quantite"]
-                                            }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    day: { $dateToString: { format: "%Y-%m-%d", date: "$evenement.reparation.payement" } },
+                },
+                totalCA: {
+                    $sum: {
+                        $add: [
+                            "$evenement.reparation.frais",
+                            {
+                                $sum: {
+                                    $map: {
+                                        input: "$evenement.reparation.achat_piece",
+                                        in: {
+                                            $multiply: ["$$this.pu", "$$this.quantite"]
                                         }
                                     }
                                 }
-                            ]
-                        }
+                            }
+                        ]
                     }
                 }
             }
-        ];
-        const ca = await collection.aggregate(pipeline).toArray();
-        result.push({ date, ca });
-    }
+        },
+        {
+            $sort: { "_id.day": 1 }
+        }
+    ];
 
+    const ca = await collection.aggregate(pipeline).toArray();
+    const result = ca.map(entry => ({ date: entry._id.day, ca: entry.totalCA }));
     client.close();
     res.send(result);
 });
-
-
-
-function getDatesBetween(startDate, endDate) {
-    let dates = [];
-    let currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      dates.push(formatDate(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    return dates;
-  }
-
-
-  function formatDate(date) {
-    let d = new Date(date),
-      month = '' + (d.getMonth() + 1),
-      day = '' + d.getDate(),
-      year = d.getFullYear();
-  
-    if (month.length < 2)
-      month = '0' + month;
-    if (day.length < 2)
-      day = '0' + day;
-  
-    return [year, month, day].join('-');
-  }
-
-
 
 
 
