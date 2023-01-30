@@ -73,7 +73,6 @@ router.put('/reception', auth , async (req, res) => {
     const numero = req.body.numero;
     const dateReception = new Date();
     dateReception.setHours(dateReception.getHours() + 3);
-    console.log(req.body.reparation);
     const evenement = {
         type: "reception",
         date: dateReception,
@@ -399,6 +398,116 @@ router.get('/voiture-present', auth, async (req, res) => {
             }
         }
     ]).toArray();
+    client.close();
+    res.send(result);
+});
+
+router.get('/temp-rep-moyenne', auth, async (req, res) => {
+
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const collection = client.db("Garage").collection("voiture");
+    const result = await collection.aggregate([
+        {
+          $unwind: "$evenement"
+        },
+        {
+          $match: {
+            "evenement.type": "reception",
+            "evenement.reparation": {
+              $ne: null
+            },
+            "evenement.reparation.debut_reparation": {
+              $ne: null
+            },
+            "evenement.reparation.fin_reparation": {
+              $ne: null
+            }
+          }
+        },
+        {
+          $unwind: "$evenement.reparation"
+        },
+        {
+            $group: {
+                _id: {
+                  numero: "$numero",
+                  reception_date: "$evenement.date"
+                },
+                min_debut_reparation: {
+                  $min: "$evenement.reparation.debut_reparation"
+                },
+                max_fin_reparation: {
+                    $max: "$evenement.reparation.fin_reparation"
+                },
+                nombre_reception: {
+                    $sum: 1
+                },
+                descriptions: {
+                    $push: "$evenement.reparation.description"
+                }
+              }
+        },
+        {
+            $project: {
+                _id: 0 ,
+                numero: "$_id.numero",
+                reception_date: "$_id.reception_date",
+                min_debut_reparation: 1 ,
+                max_fin_reparation:1 ,
+                min_debut_reparation_ms: {
+                    $toLong: "$min_debut_reparation"
+                },
+                max_fin_reparation_ms: {
+                    $toLong: "$max_fin_reparation"
+                },
+                difference_ms: {
+                    $subtract: [ "$max_fin_reparation_ms", "$min_debut_reparation_ms" ]
+                },
+                duree_reparation_moyenne_reception_voiture: {
+                    $divide: [ "$difference_ms", "$nombre_reception" ]
+                },
+                descriptions: 1
+              }
+          }
+      ]).toArray();
+
+      
+        var nombre_reception = result.length;
+        var difference_ms_total = 0;
+
+        for (var i = 0; i < result.length; i++) {
+        result[i].difference_ms = result[i].max_fin_reparation_ms - result[i].min_debut_reparation_ms;
+        difference_ms_total += result[i].difference_ms;
+        }
+
+        for (var i = 0; i < result.length; i++) {
+        result[i].duree_reparation_moyenne_reception_voiture = difference_ms_total / nombre_reception;
+        }
+
+        let sum = result.reduce((acc, item) => {
+            return acc + item.difference_ms;
+          }, 0);
+         
+          result.forEach(function(element) {
+            const durationInMs = Math.round(element.duree_reparation_moyenne_reception_voiture);
+            const durationInSeconds = durationInMs / 1000;
+            const durationInMinutes = durationInSeconds / 60;
+            const durationInHours = durationInMinutes / 60;
+            const durationInDays = durationInHours / 24;
+            const durationInSecondsRounded = Math.floor(durationInSeconds % 60);
+            const durationInMinutesRounded = Math.floor(durationInMinutes % 60);
+            const durationInHoursRounded = Math.floor(durationInHours % 24);
+            const durationInDaysRounded = Math.floor(durationInDays);
+            element.duree_reparation_moyenne_reception_voiture_jour = durationInDaysRounded;
+            element.duree_reparation_moyenne_reception_voiture_heure = durationInHoursRounded;
+            element.duree_reparation_moyenne_reception_voiture_minute = durationInMinutesRounded;
+            element.duree_reparation_moyenne_reception_voiture_seconde = durationInSecondsRounded;
+            element.duree_reparation_moyenne_reception_voiture_milliseconde = durationInMs;
+            element.duree_reparation_moyenne_reception_voiture_date = new Date(element.duree_reparation_moyenne_reception_voiture);
+          });
+
+      console.log(result);
     client.close();
     res.send(result);
 });
