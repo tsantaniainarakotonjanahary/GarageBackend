@@ -333,6 +333,33 @@ router.put('/validation-sortie', auth , async (req, res) => {
     client.close();
 });
 
+router.put('/recuperer', auth , async (req, res) => {
+    const numero = req.body.numero;
+    const dateValidation = new Date();
+    dateValidation.setHours(dateValidation.getHours() + 3);  
+    const evenement = {
+        type: "recuperation",
+        date: dateValidation,
+    };
+
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const db = client.db("Garage");
+
+    const carExists = await db.collection("voiture").findOne({ numero: numero });
+    if (!carExists) {
+        return res.status(404).json({ message: "Cette voiture n'existe pas" });
+    }
+    
+    const lastEvent = await db.collection("voiture").findOne({ numero: numero }, { $sort: { evenement: -1 }, $limit: 1 });
+
+    await db.collection("voiture").updateOne({ numero: numero }, { $push: { evenement: evenement } });
+
+    res.status(200).json({ message: "Bon de sortie validé" });
+
+    client.close();
+});
+
 
 
 router.get('/voiture-present', auth, async (req, res) => {
