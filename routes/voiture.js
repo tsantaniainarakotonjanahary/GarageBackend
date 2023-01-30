@@ -10,6 +10,20 @@ const moment = require('moment-timezone');
 const { DateTime } = require('luxon');
 const { setTimeZone } = require('date-fns');
 
+function getDatesBetween(startDate, endDate) {
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
+    const dates = [];
+  
+    while (currentDate <= end) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  
+    return dates;
+  }
+  
+
 function auth(req, res, next) 
 {
     const token = req.header('x-auth-token');
@@ -76,7 +90,8 @@ router.put('/reception', auth , async (req, res) => {
     const evenement = {
         type: "reception",
         date: dateReception,
-        reparation: req.body.reparation
+        reparation: req.body.reparation 
+        //
     };
 
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
@@ -511,6 +526,121 @@ router.get('/temp-rep-moyenne', auth, async (req, res) => {
     client.close();
     res.send(result);
 });
+
+router.get('/ca-per-day', auth, async (req, res) => {
+    const idclient = req.user.id;
+    console.log(idclient);
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const collection = client.db("Garage").collection("voiture");
+
+    let start = new Date(req.query.startDate);
+    let end = new Date(req.query.endDate);
+    let dates = getDatesBetween(start, end);
+    console.log(dates);
+    if (!dates || !Array.isArray(dates)) {
+        return res.status(400).send({ error: "La liste de dates est manquante ou mal formée dans la requête" });
+    }
+
+    // Transformation des chaînes de caractères en objets Date
+    const datesInObject = dates.map(date => new Date(date));
+
+    let result = [];
+    for (const date of datesInObject) {
+        // Calcul du CA pour la date spécifiée
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const pipeline = [
+            {
+                $unwind: "$evenement",
+            },
+            {
+                $match: {
+                    "evenement.type": "reception",
+                    "evenement.reparation.payement": {
+                        $gte: startOfDay,
+                        $lte: endOfDay
+                    }
+                }
+            },
+            {
+                $unwind: "$evenement.reparation",
+            },
+            {
+                $match: {
+                    "evenement.reparation.etat": "paye",
+                    "evenement.reparation.payement": {
+                        $gte: startOfDay,
+                        $lte: endOfDay
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalCA: {
+                        $sum: {
+                            $add: [
+                                "$evenement.reparation.frais",
+                                {
+                                    $sum: {
+                                        $map: {
+                                            input: "$evenement.reparation.achat_piece",
+                                            in: {
+                                                $multiply: ["$$this.pu", "$$this.quantite"]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ];
+        const ca = await collection.aggregate(pipeline).toArray();
+        result.push({ date, ca });
+    }
+
+    client.close();
+    res.send(result);
+});
+
+
+
+function getDatesBetween(startDate, endDate) {
+    let dates = [];
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dates.push(formatDate(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dates;
+  }
+
+
+  function formatDate(date) {
+    let d = new Date(date),
+      month = '' + (d.getMonth() + 1),
+      day = '' + d.getDate(),
+      year = d.getFullYear();
+  
+    if (month.length < 2)
+      month = '0' + month;
+    if (day.length < 2)
+      day = '0' + day;
+  
+    return [year, month, day].join('-');
+  }
+
+
+
+
+
+
 
 router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
 
