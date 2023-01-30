@@ -604,6 +604,93 @@ router.get('/ca-per-day', auth, async (req, res) => {
 
 
 
+router.get('/ca-per-month', auth, async (req, res) => {
+    const idclient = req.user.id;
+    const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
+    await client.connect();
+    const collection = client.db("Garage").collection("voiture");
+    let val = getMonthDatesByMonthAndYear(req.query.month, req.query.year);
+    let start = new Date(val.start);
+    let end = new Date(val.end);
+    let dates = getDatesBetween(start, end);
+    console.log(dates);
+    if (!dates || !Array.isArray(dates)) {
+        return res.status(400).send({ error: "La liste de dates est manquante ou mal formée dans la requête" });
+    }
+
+    const pipeline = [
+        {
+            $match: {
+                "evenement.type": "reception",
+                "evenement.reparation.payement": {
+                    $gte: start,
+                    $lte: end
+                }
+            }
+        },
+        {
+            $unwind: "$evenement",
+        },
+        {
+            $unwind: "$evenement.reparation",
+        },
+        {
+            $match: {
+                "evenement.reparation.etat": "paye",
+                "evenement.reparation.payement": {
+                    $gte: start,
+                    $lte: end
+                }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    day: { $dateToString: { format: "%Y-%m-%d", date: "$evenement.reparation.payement" } },
+                },
+                totalCA: {
+                    $sum: {
+                        $add: [
+                            "$evenement.reparation.frais",
+                            {
+                                $sum: {
+                                    $map: {
+                                        input: "$evenement.reparation.achat_piece",
+                                        in: {
+                                            $multiply: ["$$this.pu", "$$this.quantite"]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $sort: { "_id.day": 1 }
+        }
+    ];
+
+    const ca = await collection.aggregate(pipeline).toArray();
+
+    let somme = 0 ;
+    ca.forEach((entry)=>{
+        somme = somme + entry.totalCA
+    });
+
+    const result = ca.map(entry => ({ date: entry._id.day, ca: entry.totalCA }));
+    client.close();
+    res.send({somme});
+});
+
+function getMonthDatesByMonthAndYear(month, year) {
+    let startDate = new Date(year, month - 1, 1);
+    let endDate = new Date(year, month, 0);
+    return { start: startDate, end: endDate };
+  }
+  
+
 
 
 router.get('/', auth , function(req, res, next) { res.send('VOITURE'); });
