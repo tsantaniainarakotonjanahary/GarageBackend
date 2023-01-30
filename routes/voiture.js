@@ -337,7 +337,8 @@ router.put('/validation-sortie', auth , async (req, res) => {
 
 router.get('/voiture-present', auth, async (req, res) => {
 
-    const idclient = req.body.idclient;
+    const idclient = req.user.id;
+    console.log(idclient);
     const client = new MongoClient('mongodb+srv://tsanta:ETU001146@cluster0.6oftdrm.mongodb.net/?retryWrites=true&w=majority', { useUnifiedTopology: true });
     await client.connect();
     const collection = client.db("Garage").collection("voiture");
@@ -367,7 +368,7 @@ router.get('/voiture-present', auth, async (req, res) => {
         },
         {
             $match: {
-                "evenement.type": { "$ne": "validation sortie" }
+                "evenement.type": { "$ne": "recuperation" }
             }
         }
     ]).toArray();
